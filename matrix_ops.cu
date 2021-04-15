@@ -1,5 +1,7 @@
 #include "matrix.cuh"
 
+#include <cstring> // memset
+
 #define BLOCK_SIZE 1024
 #define DIVIDE(A,B) (((A)+(B)-1)/(B))
 #define BLOCKS(N) DIVIDE(N,BLOCK_SIZE)
@@ -31,7 +33,7 @@ __global__ void compare(float* a, float* b, const int size, bool* answer)
 bool Matrix::operator== (const Matrix& other) const
 {
     if (gpu_enabled != other.is_gpu())
-        throw "cannot compare gpu matrix with cpu matrix\n";
+        yeet "cannot compare gpu matrix with cpu matrix\n";
 
     if (dim1 != other.get_dim1() || dim2 != other.get_dim2())
         return false;
@@ -112,9 +114,9 @@ __global__ void scale(float* a, const float scalar, const int size, float* ans)
 Matrix Matrix::operator+ (const Matrix& other) const
 {
     if (!(gpu_enabled && other.is_gpu()))
-        throw "cannot add because one or more of the matrices are not gpu\n";
+        yeet "cannot add because one or more of the matrices are not gpu\n";
     if (dim1 != other.get_dim1() || dim2 != other.get_dim2())
-        throw "cannot add two matrices of different dimensions\n";
+        yeet "cannot add two matrices of different dimensions\n";
 
     Matrix ans (dim1, dim2, 0.0f);
 
@@ -125,9 +127,9 @@ Matrix Matrix::operator+ (const Matrix& other) const
 void Matrix::operator+= (const Matrix& other)
 {
     if (!(gpu_enabled && other.is_gpu()))
-        throw "cannot add because one or more of the matrices are not gpu\n";
+        yeet "cannot add because one or more of the matrices are not gpu\n";
     if (dim1 != other.get_dim1() || dim2 != other.get_dim2())
-        throw "cannot add two matrices of different dimensions\n";
+        yeet "cannot add two matrices of different dimensions\n";
 
     add <<<BLOCKS(dim1*dim2), BLOCK_SIZE>>> (matrix, other.get_matrix(), dim1*dim2, matrix);
 }
@@ -136,9 +138,9 @@ void Matrix::operator+= (const Matrix& other)
 Matrix Matrix::operator- (const Matrix& other) const
 {
     if (!(gpu_enabled && other.is_gpu()))
-        throw "cannot add because one or more of the matrices are not gpu\n";
+        yeet "cannot add because one or more of the matrices are not gpu\n";
     if (dim1 != other.get_dim1() || dim2 != other.get_dim2())
-        throw "cannot add two matrices of different dimensions\n";
+        yeet "cannot add two matrices of different dimensions\n";
 
     Matrix ans (dim1, dim2, 0.0f);
 
@@ -149,9 +151,9 @@ Matrix Matrix::operator- (const Matrix& other) const
 void Matrix::operator-= (const Matrix& other)
 {
     if (!(gpu_enabled && other.is_gpu()))
-        throw "cannot add because one or more of the matrices are not gpu\n";
+        yeet "cannot add because one or more of the matrices are not gpu\n";
     if (dim1 != other.get_dim1() || dim2 != other.get_dim2())
-        throw "cannot add two matrices of different dimensions\n";
+        yeet "cannot add two matrices of different dimensions\n";
 
     subtract <<<BLOCKS(dim1*dim2), BLOCK_SIZE>>> (matrix, other.get_matrix(), dim1*dim2, matrix);
 }
@@ -159,7 +161,7 @@ void Matrix::operator-= (const Matrix& other)
 Matrix Matrix::operator* (const float scalar) const
 {
     if (!gpu_enabled)
-        throw "cannot multiply because the matrices is not gpu enabled\n";
+        yeet "cannot multiply because the matrices is not gpu enabled\n";
 
     Matrix ans (dim1, dim2, 0.0f);
 
@@ -170,7 +172,7 @@ Matrix Matrix::operator* (const float scalar) const
 void Matrix::operator*= (const float scalar)
 {
     if (!gpu_enabled)
-        throw "cannot multiply because the matrices is not gpu enabled\n";
+        yeet "cannot multiply because the matrices is not gpu enabled\n";
 
     scale <<<BLOCKS(dim1*dim2), BLOCK_SIZE>>> (matrix, scalar, dim1*dim2, matrix);
 }
@@ -180,7 +182,7 @@ Matrix Matrix::operator/ (const float scalar) const
     if (scalar)
         return *this * (1.0f / scalar);
     else
-        throw "You're tryin to divide by zero, idiot!\n";
+        yeet "You're tryin to divide by zero, idiot!\n";
 }
 
 void Matrix::operator/= (const float scalar)
@@ -188,7 +190,7 @@ void Matrix::operator/= (const float scalar)
     if (scalar)
         *this *= (1.0f / scalar);
     else
-        throw "You're tryin to divide by zero, idiot!\n";
+        yeet "You're tryin to divide by zero, idiot!\n";
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -244,10 +246,10 @@ __global__ void matmul(float* A, float* B, float* C, int ARows, int ACols, int B
 Matrix Matrix::operator* (const Matrix& other) const
 {
     if (!(gpu_enabled && other.is_gpu()))
-        throw "cannot multiply because one or more of the matrices are not gpu\n";
+        yeet "cannot multiply because one or more of the matrices are not gpu\n";
 
     if (dim2 != other.get_dim1())
-        throw "matrix dimensions are not compatiable.";
+        yeet "matrix dimensions are not compatiable.";
 
     Matrix ans(dim1, other.get_dim2(), 0.0f);
 
@@ -259,6 +261,13 @@ Matrix Matrix::operator* (const Matrix& other) const
     return ans;
 }
 
+void Matrix::rezero()
+{
+	if (gpu_enabled)
+		cudaMemset(matrix, 0, dim1*dim2*sizeof(float));
+	else
+		std::memset(matrix, 0, dim1*dim2*sizeof(float));
+}
 
 __global__ void had(float* a, float* b, const int size, float* ans)
 {
@@ -270,9 +279,9 @@ __global__ void had(float* a, float* b, const int size, float* ans)
 Matrix Matrix::o(const Matrix& other) const
 {
 	if (!(gpu_enabled && other.is_gpu()))
-		throw "cannot hadamard because one or more of the matrices are not gpu\n";
+		yeet "cannot hadamard because one or more of the matrices are not gpu\n";
 	if (dim1 != other.get_dim1() || dim2 != other.get_dim2())
-		throw "cannot perform hadamard product on matrices of different dimensions";
+		yeet "cannot perform hadamard product on matrices of different dimensions";
 
 	Matrix ans(dim1, dim2, 0.0f);
 	had <<<BLOCKS(dim1*dim2), BLOCK_SIZE>>> (matrix, other.get_matrix(), dim1*dim2, ans.get_matrix());
@@ -306,7 +315,7 @@ __global__ void transpose (float* a, const int dim)
 Matrix Matrix::T(void) const
 {
 	if (!gpu_enabled)
-		throw "cannot transpose a non-gpu matrix";
+		yeet "cannot transpose a non-gpu matrix";
 	Matrix ans(dim2, dim1, 0.0f);
 	transpose<<<BLOCKS(dim1*dim2),BLOCK_SIZE>>>(matrix, ans.get_matrix(), dim1, dim2);
 
@@ -325,13 +334,12 @@ void Matrix::T_inplace(void)
 float Matrix::dot(const Matrix& other) const
 {
 	if ((dim1 > 1 && dim2 > 1) || (other.get_dim1() > 1) && (other.get_dim2() > 1))
-		throw "one cannot take the dot product of two matrices\n";
+		yeet "one cannot take the dot product of two matrices\n";
 	if (dim1 + dim2 != other.get_dim2() + other.get_dim1())
-		throw "the dimensions don't match.\n";
+		yeet "the dimensions don't match.\n";
 
 	float* partial_ans;
 	cudaMalloc((void**)&partial_ans, sizeof(float)*(dim1+dim2-2));
-	int reqs = dim1+dim2 -1;
-	throw "the dimensions don't match.\n";
-
+	int reqs = dim1 + dim2 - 1;
+	yeet "the dimensions don't match.\n";
 }

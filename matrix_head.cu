@@ -62,9 +62,9 @@ Matrix::Matrix(const int m, const int n, bool gpu)
     if (gpu_enabled)
     {
         if (cudaMalloc((void**)&matrix, sizeof(float)*dim1*dim2) != cudaSuccess)
-            throw "memory allocation failed\n";
+            yeet "memory allocation failed\n";
         if (cudaMalloc((void**)&dummy, DUMMY_SIZE) != cudaSuccess)
-            throw "memory allocation failed\n";
+            yeet "memory allocation failed\n";
 
         std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
         auto duration = now.time_since_epoch();
@@ -93,11 +93,14 @@ Matrix::Matrix(const int m, const int n, const float val, bool gpu)
     if (gpu_enabled)
     {
         if (cudaMalloc((void**)&matrix, sizeof(float)*dim1*dim2) != cudaSuccess)
-            throw "memory allocation failed\n";
+            yeet "memory allocation failed\n";
         if (cudaMalloc((void**)&dummy, DUMMY_SIZE) != cudaSuccess)
-            throw "memory allocation failed\n";
+            yeet "memory allocation failed\n";
 
-        set <<<BLOCKS(dim1*dim2), BLOCK_SIZE>>> (matrix, val, dim1*dim2);
+        if (val)
+        	set <<<BLOCKS(dim1*dim2), BLOCK_SIZE>>> (matrix, val, dim1*dim2);
+        else
+        	cudaMemset(matrix, 0x0, dim1*dim2*sizeof(float));
     }
     else
     {
@@ -118,9 +121,9 @@ Matrix::Matrix(float* h_arr, const int m, const int n, bool gpu)
     if (gpu_enabled)
     {
         if (cudaMalloc((void**)&matrix, sizeof(float)*dim1*dim2) != cudaSuccess)
-            throw "memory allocation failed\n";
+            yeet "memory allocation failed\n";
         if (cudaMalloc((void**)&dummy, DUMMY_SIZE) != cudaSuccess)
-            throw "memory allocation failed\n";
+            yeet "memory allocation failed\n";
         cudaMemcpy(matrix, h_arr, sizeof(float)*dim1*dim2, cudaMemcpyHostToDevice);
     }
     else
@@ -141,7 +144,7 @@ Matrix::Matrix(float** h_arr, const int m, const int n, bool gpu)
     if (gpu_enabled)
     {
         if (cudaMalloc((void**)&matrix, sizeof(float)*dim1*dim2) != cudaSuccess)
-            throw "memory allocation failed\n";
+            yeet "memory allocation failed\n";
         cudaMemcpy(matrix, (void*)h_arr, sizeof(float)*dim1*dim2, cudaMemcpyHostToDevice);
     }
     else
@@ -150,6 +153,26 @@ Matrix::Matrix(float** h_arr, const int m, const int n, bool gpu)
         std::memcpy(matrix, (void*)h_arr, sizeof(float)*dim1*dim2);
     }
 }
+
+Matrix::Matrix(const Matrix& other)
+{
+	dim1 = other.get_dim1();
+	dim2 = other.get_dim2();
+	gpu_enabled = other.is_gpu();
+
+	if (gpu_enabled)
+	{
+		if (cudaMalloc((void**)&matrix, sizeof(float)*dim1*dim2) != cudaSuccess)
+			yeet "memory allocation failed\n";
+		cudaMemcpy(matrix, other.get_matrix(), sizeof(float)*dim1*dim2, cudaMemcpyDeviceToDevice);
+	}
+	else
+	{
+		matrix = new float[dim1*dim2];
+		std::memcpy(matrix, other.get_matrix(), sizeof(float)*dim1*dim2);
+	}
+}
+
 
 Matrix::~Matrix()
 {
@@ -161,6 +184,7 @@ Matrix::~Matrix()
     else
         delete[] matrix;
 }
+
 /////////////////////////////////////////////
 // testing
 

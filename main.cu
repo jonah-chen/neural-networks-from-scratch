@@ -1,34 +1,32 @@
-//
-// Created by hina on 2021-03-11.
-//
-#include "matrix.cuh"
+#include "model.cuh"
+#include <vector>
 
 int main(int argc, char* argv[])
 {
 	try
 	{
-		Matrix m1(10000, 10000);
-		Matrix m2(10000,10000);
+		Model nn (losses::MSE);
+		nn += new Dense(10,300);
+		nn += new Dense(300, 5);
 
-		std::cout << m1;
-		std::cout << m2;
-		std::cout << m1 * m2;
-		std::cout << m2 * m1;
+		Matrix m(10);
+		std::cout << nn.feed(m);
 
-		std::cout << m1.get_cpu();
-
-		m2.to_cpu();
-		std::cout << m2;
-		std::cout << m2.get_gpu();
-
-		// rectangular matrices
-		Matrix m3 (2000,8000);
-		Matrix m4 (8000,1000);
-		std::cout << m3*m4;
-		std::cout << m4*m3;
+		std::vector<Matrix> train_data;
+		std::vector<Matrix> ans;
+		// generate some training data
+		for(int i = 0; i < 10; ++i)
+		{
+			Matrix m(10);
+			Matrix a(5, 1.0f);
+			train_data.push_back(m);
+			ans.push_back(a);
+		}
+		for (int i = 0; i < 20; ++i)
+		std::cout << nn.train_batch(train_data.begin(), ans.begin(), 10, 0.01f) << "\n";
 	}
-	catch (char const* a)
+	catch (char const* s)
 	{
-		std::cout << a;
+		std::cout << s << "\n";
 	}
 }

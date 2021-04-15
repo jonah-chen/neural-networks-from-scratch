@@ -1,23 +1,31 @@
+#pragma once
 
-#ifndef NEURAL_NETWORKS_FROM_SCRATCH_DENSE_CUH
-#define NEURAL_NETWORKS_FROM_SCRATCH_DENSE_CUH
+#include "layer.cuh"
+#include "activation.cuh"
 
-#include "matrix.cuh"
-
-class Dense
+class Dense : public Layer
 {
-	int input_shape;
-	int output_shape;
-	Matrix weight; // in x out
-	Matrix bias; // out x 1
+	Matrix weight, weight_delta; // in x out
+	Matrix bias, bias_delta; // out x 1
+
+protected:
+	/* activation function that will be applied.
+	 * MUST BE __device__ FUNCTION
+	 * Limited to functions that does not depend on the other weights.
+	 */
+	Activation_Function activation_func;
+
+
 public:
-	Dense(int, int); // input and output dimensions
+	// neurons = activation_func(weights * prev_layer_neuron + bias)
 
-	Matrix feedforward(const Matrix&) const;
-	void feedforward(const Matrix&, float*) const;
+	Dense(int, int, Activation_Function=activation::LINEAR); // input and output dimensions, activation function defaults to NULL
 
-	void gradient_update(const Matrix&, const Matrix&);
+	void feedforward_update(const Matrix &prev_neurons) override;
+	Matrix feedforward(const Matrix &prev_neurons) const override;
+	Matrix backpropogate(const Matrix &old_grad) override;
+
+	void backpropogate_update(const Matrix &old_grad) override;
+
+	void gradient_update(float learning_rate, float momentum);
 };
-
-
-#endif //NEURAL_NETWORKS_FROM_SCRATCH_DENSE_CUH
